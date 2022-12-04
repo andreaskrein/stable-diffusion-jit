@@ -202,3 +202,5 @@ data/
 ddata/
 migrators/
 data.*.tar
+.idea
+models/*.pt

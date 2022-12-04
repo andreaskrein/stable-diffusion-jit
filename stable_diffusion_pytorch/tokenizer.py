@@ -1,6 +1,5 @@
 import unicodedata
 import functools
-import itertools
 import json
 from typing import List, Tuple
 import regex as re

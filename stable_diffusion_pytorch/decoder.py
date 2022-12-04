@@ -5,12 +5,12 @@ from .attention import SelfAttention
 
 
 class AttentionBlock(nn.Module):
-    def __init__(self, channels):
+    def __init__(self, channels: int):
         super().__init__()
         self.groupnorm = nn.GroupNorm(32, channels)
         self.attention = SelfAttention(1, channels)
-    
-    def forward(self, x):
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         residue = x
         x = self.groupnorm(x)
 
@@ -23,6 +23,7 @@ class AttentionBlock(nn.Module):
 
         x += residue
         return x
+
 
 class ResidualBlock(nn.Module):
     def __init__(self, in_channels, out_channels):
@@ -37,8 +38,8 @@ class ResidualBlock(nn.Module):
             self.residual_layer = nn.Identity()
         else:
             self.residual_layer = nn.Conv2d(in_channels, out_channels, kernel_size=1, padding=0)
-    
-    def forward(self, x):
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         residue = x
 
         x = self.groupnorm_1(x)
@@ -50,6 +51,7 @@ class ResidualBlock(nn.Module):
         x = self.conv_2(x)
 
         return x + self.residual_layer(residue)
+
 
 class Decoder(nn.Sequential):
     def __init__(self):
@@ -82,7 +84,7 @@ class Decoder(nn.Sequential):
             nn.Conv2d(128, 3, kernel_size=3, padding=1),
         )
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         x /= 0.18215
         for module in self:
             x = module(x)

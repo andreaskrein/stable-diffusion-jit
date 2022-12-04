@@ -1,6 +1,5 @@
 import torch
 from torch import nn
-from torch.nn import functional as F
 from .decoder import AttentionBlock, ResidualBlock
 
 
@@ -28,7 +27,7 @@ class Encoder(nn.Sequential):
             nn.Conv2d(8, 8, kernel_size=1, padding=0),
         )
 
-    def forward(self, x, noise):
+    def forward(self, x: torch.Tensor, noise: torch.Tensor) -> torch.Tensor:
         for module in self:
             x = module(x)
 

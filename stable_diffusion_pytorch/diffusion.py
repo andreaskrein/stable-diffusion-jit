@@ -5,19 +5,20 @@ from .attention import SelfAttention, CrossAttention
 
 
 class TimeEmbedding(nn.Module):
-    def __init__(self, n_embd):
+    def __init__(self, n_embd: int):
         super().__init__()
         self.linear_1 = nn.Linear(n_embd, 4 * n_embd)
         self.linear_2 = nn.Linear(4 * n_embd, 4 * n_embd)
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         x = self.linear_1(x)
         x = F.silu(x)
         x = self.linear_2(x)
         return x
 
+
 class ResidualBlock(nn.Module):
-    def __init__(self, in_channels, out_channels, n_time=1280):
+    def __init__(self, in_channels: int, out_channels: int, n_time: int = 1280):
         super().__init__()
         self.groupnorm_feature = nn.GroupNorm(32, in_channels)
         self.conv_feature = nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1)
@@ -30,8 +31,8 @@ class ResidualBlock(nn.Module):
             self.residual_layer = nn.Identity()
         else:
             self.residual_layer = nn.Conv2d(in_channels, out_channels, kernel_size=1, padding=0)
-    
-    def forward(self, feature, time):
+
+    def forward(self, feature: torch.Tensor, time: torch.Tensor) -> torch.Tensor:
         residue = feature
 
         feature = self.groupnorm_feature(feature)
@@ -48,11 +49,12 @@ class ResidualBlock(nn.Module):
 
         return merged + self.residual_layer(residue)
 
+
 class AttentionBlock(nn.Module):
-    def __init__(self, n_head: int, n_embd: int, d_context=768):
+    def __init__(self, n_head: int, n_embd: int, d_context: int = 768):
         super().__init__()
         channels = n_head * n_embd
-        
+
         self.groupnorm = nn.GroupNorm(32, channels, eps=1e-6)
         self.conv_input = nn.Conv2d(channels, channels, kernel_size=1, padding=0)
 
@@ -61,19 +63,19 @@ class AttentionBlock(nn.Module):
         self.layernorm_2 = nn.LayerNorm(channels)
         self.attention_2 = CrossAttention(n_head, channels, d_context, in_proj_bias=False)
         self.layernorm_3 = nn.LayerNorm(channels)
-        self.linear_geglu_1  = nn.Linear(channels, 4 * channels * 2)
+        self.linear_geglu_1 = nn.Linear(channels, 4 * channels * 2)
         self.linear_geglu_2 = nn.Linear(4 * channels, channels)
 
         self.conv_output = nn.Conv2d(channels, channels, kernel_size=1, padding=0)
-    
-    def forward(self, x, context):
+
+    def forward(self, x: torch.Tensor, context: torch.Tensor) -> torch.Tensor:
         residue_long = x
 
         x = self.groupnorm(x)
         x = self.conv_input(x)
-        
+
         n, c, h, w = x.shape
-        x = x.view((n, c, h * w))   # (n, c, hw)
+        x = x.view((n, c, h * w))  # (n, c, hw)
         x = x.transpose(-1, -2)  # (n, hw, c)
 
         residue_short = x
@@ -94,44 +96,54 @@ class AttentionBlock(nn.Module):
         x += residue_short
 
         x = x.transpose(-1, -2)  # (n, c, hw)
-        x = x.view((n, c, h, w))    # (n, c, h, w)
+        x = x.view((n, c, h, w))  # (n, c, h, w)
 
         return self.conv_output(x) + residue_long
 
+
 class Upsample(nn.Module):
-    def __init__(self, channels):
+    def __init__(self, channels: int):
         super().__init__()
         self.conv = nn.Conv2d(channels, channels, kernel_size=3, padding=1)
-    
-    def forward(self, x):
-        x = F.interpolate(x, scale_factor=2, mode='nearest')
+
+    def forward(self, x: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
+        x = F.interpolate(x, scale_factor=2.0, mode='nearest')
         return self.conv(x)
 
+
 class SwitchSequential(nn.Sequential):
-    def forward(self, x, context, time):
+    def forward(self, x: torch.Tensor, context: torch.Tensor, time: torch.Tensor) -> torch.Tensor:
         for layer in self:
             if isinstance(layer, AttentionBlock):
                 x = layer(x, context)
             elif isinstance(layer, ResidualBlock):
                 x = layer(x, time)
-            else:
-                x = layer(x)
+            elif isinstance(layer, Upsample):
+                x = layer(x, context)
         return x
+
+
+class Conv2dSequential(nn.Sequential):
+    def forward(self, x: torch.Tensor, context: torch.Tensor, time: torch.Tensor) -> torch.Tensor:
+        for layer in self:
+            x = layer(x)
+        return x
+
 
 class UNet(nn.Module):
     def __init__(self):
         super().__init__()
         self.encoders = nn.ModuleList([
-            SwitchSequential(nn.Conv2d(4, 320, kernel_size=3, padding=1)),
+            Conv2dSequential(nn.Conv2d(4, 320, kernel_size=3, padding=1)),
             SwitchSequential(ResidualBlock(320, 320), AttentionBlock(8, 40)),
             SwitchSequential(ResidualBlock(320, 320), AttentionBlock(8, 40)),
-            SwitchSequential(nn.Conv2d(320, 320, kernel_size=3, stride=2, padding=1)),
+            Conv2dSequential(nn.Conv2d(320, 320, kernel_size=3, stride=2, padding=1)),
             SwitchSequential(ResidualBlock(320, 640), AttentionBlock(8, 80)),
             SwitchSequential(ResidualBlock(640, 640), AttentionBlock(8, 80)),
-            SwitchSequential(nn.Conv2d(640, 640, kernel_size=3, stride=2, padding=1)),
+            Conv2dSequential(nn.Conv2d(640, 640, kernel_size=3, stride=2, padding=1)),
             SwitchSequential(ResidualBlock(640, 1280), AttentionBlock(8, 160)),
             SwitchSequential(ResidualBlock(1280, 1280), AttentionBlock(8, 160)),
-            SwitchSequential(nn.Conv2d(1280, 1280, kernel_size=3, stride=2, padding=1)),
+            Conv2dSequential(nn.Conv2d(1280, 1280, kernel_size=3, stride=2, padding=1)),
             SwitchSequential(ResidualBlock(1280, 1280)),
             SwitchSequential(ResidualBlock(1280, 1280)),
         ])
@@ -155,7 +167,7 @@ class UNet(nn.Module):
             SwitchSequential(ResidualBlock(640, 320), AttentionBlock(8, 40)),
         ])
 
-    def forward(self, x, context, time):
+    def forward(self, x: torch.Tensor, context: torch.Tensor, time: torch.Tensor) -> torch.Tensor:
         skip_connections = []
         for layers in self.encoders:
             x = layers(x, context, time)
@@ -166,21 +178,22 @@ class UNet(nn.Module):
         for layers in self.decoders:
             x = torch.cat((x, skip_connections.pop()), dim=1)
             x = layers(x, context, time)
-        
+
         return x
 
 
 class FinalLayer(nn.Module):
-    def __init__(self, in_channels, out_channels):
+    def __init__(self, in_channels: int, out_channels: int):
         super().__init__()
         self.groupnorm = nn.GroupNorm(32, in_channels)
         self.conv = nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1)
-    
-    def forward(self, x):
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         x = self.groupnorm(x)
         x = F.silu(x)
         x = self.conv(x)
         return x
+
 
 class Diffusion(nn.Module):
     def __init__(self):
@@ -188,7 +201,7 @@ class Diffusion(nn.Module):
         self.time_embedding = TimeEmbedding(320)
         self.unet = UNet()
         self.final = FinalLayer(320, 4)
-    
+
     def forward(self, latent, context, time):
         time = self.time_embedding(time)
         output = self.unet(latent, context, time)
