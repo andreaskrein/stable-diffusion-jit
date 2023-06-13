@@ -66,7 +66,6 @@ class Tokenizer:
     def bpe(self, chunk: str) -> Tuple[str]:
         words = list(chunk)
         words[-1] += "</w>"
-
         while len(words) > 1:
             valid_pairs = [pair for pair in pairwise(words) if pair in self.merges]
             if not valid_pairs:

@@ -37,30 +37,34 @@ def load_clip(device):
 
     clip = CLIP().to(device)
     clip.load_state_dict(state_dict)
+    clip = torch.compile(clip, mode='max-autotune')
     return clip
 
 def load_encoder(device):
-    state_dict = torch.load(util.get_file_path('ckpt/encoder.pt'))
+    state_dict = torch.load(util.get_file_path('../nvai/encoder.pt'))
     state_dict = make_compatible(state_dict)
 
     encoder = Encoder().to(device)
     encoder.load_state_dict(state_dict)
+    encoder = torch.compile(encoder, mode='max-autotune')
     return encoder
 
 def load_decoder(device):
-    state_dict = torch.load(util.get_file_path('ckpt/decoder.pt'))
+    state_dict = torch.load(util.get_file_path('../nvai/decoder.pt'))
     state_dict = make_compatible(state_dict)
 
     decoder = Decoder().to(device)
     decoder.load_state_dict(state_dict)
+    decoder = torch.compile(decoder, mode='max-autotune')
     return decoder
 
 def load_diffusion(device):
-    state_dict = torch.load(util.get_file_path('ckpt/diffusion.pt'))
+    state_dict = torch.load(util.get_file_path('../nvai/diffusion.pt'))
     state_dict = make_compatible(state_dict)
 
     diffusion = Diffusion().to(device)
     diffusion.load_state_dict(state_dict)
+    diffusion = torch.compile(diffusion, mode='max-autotune')
     return diffusion
 
 def preload_models(device):

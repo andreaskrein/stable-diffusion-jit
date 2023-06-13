@@ -17,7 +17,7 @@ def get_alphas_cumprod(beta_start=0.00085, beta_end=0.0120, n_training_steps=100
 def get_file_path(filename, url=None):
     module_location = os.path.dirname(os.path.abspath(__file__))
     parent_location = os.path.dirname(module_location)
-    file_location = os.path.join(parent_location, "data", filename)
+    file_location = os.path.join(parent_location, "nvai-jit", filename)
     return file_location
 
 def move_channel(image, to):
