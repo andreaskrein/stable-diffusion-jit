@@ -9,7 +9,7 @@ class KLMSSampler():
         alphas_cumprod = util.get_alphas_cumprod(n_training_steps=n_training_steps)
         sigmas = ((1 - alphas_cumprod) / alphas_cumprod) ** 0.5
         log_sigmas = np.log(sigmas)
-        log_sigmas = np.linspace(timesteps, range(n_training_steps), log_sigmas)
+        log_sigmas = np.interp(timesteps, range(n_training_steps), log_sigmas)
         sigmas = np.exp(log_sigmas)
         sigmas = np.append(sigmas, 0)
         
