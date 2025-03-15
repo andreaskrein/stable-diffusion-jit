@@ -37,8 +37,11 @@ class KLMSSampler():
         # Interpolating log_sigmas over timesteps
         # `torch.interp` can be used, but it is not available in PyTorch directly. We can use `torch.nn.functional.interpolate` or custom interpolation.
         # Here we'll use linear interpolation manually, assuming that the input `timesteps` matches.
-        log_sigmas_interp = torch.interp(timesteps, torch.arange(n_training_steps), log_sigmas)
-
+        #log_sigmas_interp = torch.interp(timesteps, torch.arange(n_training_steps), log_sigmas)
+        
+        # Interpolate log_sigmas over timesteps using linear interpolation
+        log_sigmas_interp = linear_interpolate(timesteps, torch.arange(n_training_steps), log_sigmas)
+        
         # Now calculate sigmas and append a final value of 0 to the tensor
         sigmas = torch.exp(log_sigmas_interp)
         sigmas = torch.cat([sigmas, torch.tensor([0.0])])  # Appending 0 to the tensor
@@ -84,3 +87,20 @@ class KLMSSampler():
             lms_coeff = np.trapz(y=y, x=x)
             latents += lms_coeff * output
         return latents
+
+    def linear_interpolate(x, xp, fp):
+        # Ensure that x, xp, and fp are tensors
+        x, xp, fp = map(torch.tensor, (x, xp, fp))
+        
+        # Find the indices of the x values that fall between xp
+        indices = torch.searchsorted(xp, x)
+        
+        # Get the left and right indices for linear interpolation
+        x_left = xp[indices - 1]
+        x_right = xp[indices]
+        f_left = fp[indices - 1]
+        f_right = fp[indices]
+        
+        # Linear interpolation formula
+        slope = (f_right - f_left) / (x_right - x_left)
+        return f_left + slope * (x - x_left)
