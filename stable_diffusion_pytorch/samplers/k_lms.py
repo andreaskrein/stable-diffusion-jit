@@ -3,16 +3,47 @@ from .. import util
 import numpy as np
 
 class KLMSSampler():
-    def __init__(self, n_inference_steps=50, n_training_steps=1000, lms_order=4):
-        timesteps = np.linspace(n_training_steps - 1, 0, n_inference_steps)
+    #def __init__(self, n_inference_steps=50, n_training_steps=1000, lms_order=4):
+    #    timesteps = np.linspace(n_training_steps - 1, 0, n_inference_steps)
 
-        alphas_cumprod = util.get_alphas_cumprod(n_training_steps=n_training_steps)
-        sigmas = ((1 - alphas_cumprod) / alphas_cumprod) ** 0.5
-        log_sigmas = np.log(sigmas)
-        log_sigmas = np.interp(timesteps, range(n_training_steps), log_sigmas)
-        sigmas = np.exp(log_sigmas)
-        sigmas = np.append(sigmas, 0)
+    #    alphas_cumprod = util.get_alphas_cumprod(n_training_steps=n_training_steps)
+    #    sigmas = ((1 - alphas_cumprod) / alphas_cumprod) ** 0.5
+    #    log_sigmas = np.log(sigmas)
+    #    log_sigmas = np.interp(timesteps, range(n_training_steps), log_sigmas)
+    #    sigmas = np.exp(log_sigmas)
+    #    sigmas = np.append(sigmas, 0)
+    #    
+    #    self.sigmas = sigmas
+    #    self.initial_scale = sigmas.max()
+    #    self.timesteps = timesteps
+    #    self.n_inference_steps = n_inference_steps
+    #    self.n_training_steps = n_training_steps
+    #    self.lms_order = lms_order
+    #    self.step_count = 0
+    #    self.outputs = []
         
+    def __init__(self, n_inference_steps=50, n_training_steps=1000, lms_order=4):
+        # Create a tensor of timesteps using torch.linspace
+        timesteps = torch.linspace(n_training_steps - 1, 0, n_inference_steps)
+
+        # Assuming util.get_alphas_cumprod can be converted to a torch version.
+        # Replace this with the PyTorch equivalent of the function
+        alphas_cumprod = util.get_alphas_cumprod(n_training_steps=n_training_steps)  # Ensure this returns a PyTorch tensor
+
+        # Compute sigmas
+        sigmas = ((1 - alphas_cumprod) / alphas_cumprod) ** 0.5
+        log_sigmas = torch.log(sigmas)
+
+        # Interpolating log_sigmas over timesteps
+        # `torch.interp` can be used, but it is not available in PyTorch directly. We can use `torch.nn.functional.interpolate` or custom interpolation.
+        # Here we'll use linear interpolation manually, assuming that the input `timesteps` matches.
+        log_sigmas_interp = torch.interp(timesteps, torch.arange(n_training_steps), log_sigmas)
+
+        # Now calculate sigmas and append a final value of 0 to the tensor
+        sigmas = torch.exp(log_sigmas_interp)
+        sigmas = torch.cat([sigmas, torch.tensor([0.0])])  # Appending 0 to the tensor
+
+        # Store the attributes
         self.sigmas = sigmas
         self.initial_scale = sigmas.max()
         self.timesteps = timesteps
