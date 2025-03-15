@@ -40,7 +40,7 @@ class KLMSSampler():
         #log_sigmas_interp = torch.interp(timesteps, torch.arange(n_training_steps), log_sigmas)
         
         # Interpolate log_sigmas over timesteps using linear interpolation
-        log_sigmas_interp = linear_interpolate(timesteps, torch.arange(n_training_steps), log_sigmas)
+        log_sigmas_interp = linear_interpolate2(timesteps, torch.arange(n_training_steps), log_sigmas)
         
         # Now calculate sigmas and append a final value of 0 to the tensor
         sigmas = torch.exp(log_sigmas_interp)
