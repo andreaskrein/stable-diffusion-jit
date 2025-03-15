@@ -104,3 +104,40 @@ class KLMSSampler():
         # Linear interpolation formula
         slope = (f_right - f_left) / (x_right - x_left)
         return f_left + slope * (x - x_left)
+
+    def linear_interpolate2(x, xp, fp):
+        """
+        Perform linear interpolation of f at x given data points (xp, fp).
+        
+        Parameters:
+            x (Tensor): Points at which to interpolate.
+            xp (Tensor): Known data points (e.g., the training steps).
+            fp (Tensor): Values at the known data points.
+        
+        Returns:
+            Tensor: Interpolated values at x.
+        """
+        # Ensure tensors are of the correct shape
+        xp = xp.squeeze()
+        fp = fp.squeeze()
+    
+        # Ensure the input is sorted
+        assert torch.all(xp[:-1] <= xp[1:]), "xp must be sorted in increasing order."
+    
+        # Get the indices of xp that are less than or equal to x
+        indices = torch.searchsorted(xp, x, right=True) - 1
+        
+        # Handle boundary conditions (e.g., if x is out of the xp range)
+        indices = torch.clamp(indices, 0, len(xp) - 2)
+    
+        # Get the left and right values for interpolation
+        x_left = xp[indices]
+        x_right = xp[indices + 1]
+        f_left = fp[indices]
+        f_right = fp[indices + 1]
+        
+        # Calculate the slope for linear interpolation
+        slope = (f_right - f_left) / (x_right - x_left)
+        
+        # Perform the interpolation
+        return f_left + slope * (x - x_left)
