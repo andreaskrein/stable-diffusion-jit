@@ -7,11 +7,24 @@ def get_time_embedding(timestep):
     x = torch.tensor([timestep], dtype=torch.float32)[:, None] * freqs[None]
     return torch.cat([torch.cos(x), torch.sin(x)], dim=-1)
 
+#def get_alphas_cumprod(beta_start=0.00085, beta_end=0.0120, n_training_steps=1000):
+#    betas = torch.linspace(beta_start ** 0.5, beta_end ** 0.5, n_training_steps, dtype=torch.float32) ** 2
+#    alphas = 1.0 - betas
+#    alphas_cumprod = torch.cumprod(alphas, axis=0)
+#    return alphas_cumprod
+
 def get_alphas_cumprod(beta_start=0.00085, beta_end=0.0120, n_training_steps=1000):
+    # Create the betas tensor using torch.linspace
     betas = torch.linspace(beta_start ** 0.5, beta_end ** 0.5, n_training_steps, dtype=torch.float32) ** 2
+    
+    # Calculate alphas
     alphas = 1.0 - betas
-    alphas_cumprod = torch.cumprod(alphas, axis=0)
+    
+    # Compute cumulative product along the first dimension (dim=0)
+    alphas_cumprod = torch.cumprod(alphas, dim=0)
+    
     return alphas_cumprod
+    
 
 def get_file_path(filename, url=None):
     module_location = os.path.dirname(os.path.abspath(__file__))
