@@ -53,7 +53,7 @@ class KLMSSampler():
       sigma = self.sigmas[step_count]
       return 1 / (sigma ** 2 + 1) ** 0.5
 
-  def set_strength(self, strength=1):
+  def set_strength(self, strength=torch.tensor(1)):
       start_step = self.n_inference_steps - int(self.n_inference_steps * strength)
       self.timesteps = torch.linspace(self.n_training_steps - 1, 0, self.n_inference_steps)
       self.timesteps = self.timesteps[start_step:]
