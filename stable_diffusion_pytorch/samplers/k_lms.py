@@ -9,8 +9,15 @@ class KLMSSampler():
 
     # Assuming util.get_alphas_cumprod can be converted to a torch version.
     # Replace this with the PyTorch equivalent of the function
-    alphas_cumprod = util.get_alphas_cumprod(n_training_steps=n_training_steps)  # Ensure this returns a PyTorch tensor
+    #alphas_cumprod = util.get_alphas_cumprod(n_training_steps=n_training_steps)  # Ensure this returns a PyTorch tensor
 
+    betas = torch.linspace(0.00085 ** 0.5, 0.0120 ** 0.5, n_training_steps, dtype=torch.float32) ** 2
+    # Calculate alphas
+    alphas = 1.0 - betas
+    # Compute cumulative product along the first dimension (dim=0)
+    alphas_cumprod = torch.cumprod(alphas, dim=0)
+
+    
     # Compute sigmas
     sigmas = ((1 - alphas_cumprod) / alphas_cumprod) ** 0.5
     log_sigmas = torch.log(sigmas)
