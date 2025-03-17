@@ -13,7 +13,7 @@ def get_time_embedding(timestep):
 #    alphas_cumprod = torch.cumprod(alphas, axis=0)
 #    return alphas_cumprod
 
-def get_alphas_cumprod(beta_start=torch.tensor(0.00085), beta_end=torch.tensor(0.0120), n_training_steps=1000):
+def get_alphas_cumprod(beta_start=torch.tensor(0.00085), beta_end=torch.tensor(0.0120), n_training_steps=torch.tensor(1000)):
     # Create the betas tensor using torch.linspace
     betas = torch.linspace(beta_start ** 0.5, beta_end ** 0.5, n_training_steps, dtype=torch.float32) ** 2
     
