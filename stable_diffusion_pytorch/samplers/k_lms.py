@@ -72,7 +72,7 @@ class KLMSSampler():
           latents += lms_coeff * output
       return latents
 
-  def linear_interpolate2(self, x, xp, fp):
+  def linear_interpolate(self, x, xp, fp):
       """
       Perform linear interpolation of f at x given data points (xp, fp).
       
