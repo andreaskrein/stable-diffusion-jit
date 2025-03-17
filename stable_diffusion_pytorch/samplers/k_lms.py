@@ -58,7 +58,7 @@ class KLMSSampler():
       self.timesteps = torch.linspace(self.n_training_steps - 1, 0, self.n_inference_steps)
       self.timesteps = self.timesteps[start_step:]
       self.initial_scale = self.sigmas[start_step]
-      self.step_count = start_step
+      self.step_count = int(start_step)
 
   def step(self, latents, output):
       t = self.step_count
