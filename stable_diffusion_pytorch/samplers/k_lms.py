@@ -75,7 +75,7 @@ class KLMSSampler():
                   continue
               y *= x - self.sigmas[t - j]
               y /= self.sigmas[t - i] - self.sigmas[t - j]
-          lms_coeff = np.trapz(y=y, x=x)
+          lms_coeff = torch.trapz(y=y, x=x)
           latents += lms_coeff * output
       return latents
 
