@@ -47,8 +47,8 @@ self.outputs = []
 
 
 
-def get_input_scale(self, step_count=None):
-if step_count is None:
+def get_input_scale(self, step_count):
+if len(step_count) == 0:
 step_count = self.step_count
 sigma = self.sigmas[step_count]
 return 1 / (sigma ** 2 + 1) ** 0.5
