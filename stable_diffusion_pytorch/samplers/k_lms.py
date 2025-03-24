@@ -3,7 +3,7 @@ from .. import util
 import numpy as np
 
 class KLMSSampler():
-   def __init__(self, n_inference_steps=torch.tensor(50), n_training_steps=torch.tensor(1000), lms_order=torch.tensor(4)):
+   def __init__(self, n_inference_steps=50, n_training_steps=100), lms_order=4):
        # Create a tensor of timesteps using torch.linspace
        timesteps = torch.linspace(n_training_steps - 1, 0, n_inference_steps)
 
